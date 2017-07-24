@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	mysqlMeta "github.com/guinso/gxdoc/datavault/metareader/mysql"
 	"github.com/guinso/gxdoc/datavault/record"
 
 	///explicitly include GO mysql library
@@ -17,10 +18,11 @@ type DataVault struct {
 	Db        *sql.DB
 }
 
-///Initialize DataVault instance
+//CreateDV to create DataVault instance
 func CreateDV(address string, username string, password string,
 	dbName string, port int) (*DataVault, error) {
 
+	//TODO:  handle various database vendor
 	db, err := sql.Open("mysql", fmt.Sprintf(
 		"%s:%s@tcp(%s:%d)/%s?charset=utf8", username, password, address, port, dbName))
 
@@ -39,41 +41,25 @@ func CreateDV(address string, username string, password string,
 	return &dv, nil
 }
 
-///list all data vault's hub
+//GetHubs list all data vault's hub
 func (dv *DataVault) GetHubs() []string {
-	return dv.getDbMetaTableName("hub_")
+	//TODO:  handle various database vendor
+	return mysqlMeta.GetDbMetaTableName(dv.Db, dv.DbName, "hub_")
 }
 
-///list all data vault's satelites
+//GetSatalites list all data vault's satelites
 func (dv *DataVault) GetSatalites() []string {
-	return dv.getDbMetaTableName("sat_")
+	//TODO:  handle various database vendor
+	return mysqlMeta.GetDbMetaTableName(dv.Db, dv.DbName, "sat_")
 }
 
-///list all data vault's links
+//GetLinks list all data vault's links
 func (dv *DataVault) GetLinks() []string {
-	return dv.getDbMetaTableName("link_")
+	//TODO:  handle various database vendor
+	return mysqlMeta.GetDbMetaTableName(dv.Db, dv.DbName, "link_")
 }
 
-func (dv *DataVault) getDbMetaTableName(tablePrefix string) []string {
-	rows, err := dv.Db.Query("SELECT table_name FROM information_schema.tables"+
-		" where table_schema=? AND table_name LIKE '"+tablePrefix+"%'", dv.DbName)
-
-	if err != nil {
-		return nil
-	}
-
-	var result []string
-	for rows.Next() {
-		var tmp string
-		rows.Scan(&tmp)
-
-		result = append(result, tmp)
-	}
-
-	return result
-}
-
-//InsertRecord is use to insert new record into database
+//InsertRecord to insert new record into database
 func (dv *DataVault) InsertRecord(dvInsertRecord *record.DvInsertRecord) error {
 	sqls, sqlErr := dvInsertRecord.GenerateMultiSQL()
 
@@ -86,6 +72,7 @@ func (dv *DataVault) InsertRecord(dvInsertRecord *record.DvInsertRecord) error {
 		return beginErr
 	}
 
+	//TODO: test with various database vendor
 	for _, sql := range sqls {
 		execErr := dv.execSQL(sql, transaction)
 		if execErr != nil {
