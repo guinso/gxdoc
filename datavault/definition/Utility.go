@@ -1,8 +1,8 @@
 package definition
 
 import (
-	"gxdoc/database"
-	"gxdoc/util"
+	"github.com/guinso/gxdoc/database"
+	"github.com/guinso/gxdoc/util"
 )
 
 const (

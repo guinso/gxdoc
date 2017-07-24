@@ -2,9 +2,10 @@ package data
 
 import (
 	"fmt"
-	"gxdoc/document/schema"
 	"regexp"
 	"time"
+
+	"github.com/guinso/gxdoc/document/schema"
 
 	"github.com/beevik/etree"
 )

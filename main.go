@@ -2,15 +2,16 @@ package main
 
 import (
 	"fmt"
-	"gxdoc/database"
-	"gxdoc/datavault"
-	"gxdoc/datavault/definition"
-	"gxdoc/datavault/record"
-	"gxdoc/util"
 	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/guinso/gxdoc/database"
+	"github.com/guinso/gxdoc/datavault"
+	"github.com/guinso/gxdoc/datavault/definition"
+	"github.com/guinso/gxdoc/datavault/record"
+	"github.com/guinso/gxdoc/util"
 )
 
 //NOTE: work in progress (this is not actual use case)

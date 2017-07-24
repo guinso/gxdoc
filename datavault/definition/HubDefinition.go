@@ -2,8 +2,9 @@ package definition
 
 import (
 	"fmt"
-	"gxdoc/database"
-	"gxdoc/util"
+
+	"github.com/guinso/gxdoc/database"
+	"github.com/guinso/gxdoc/util"
 )
 
 //HubDefinition is schema to descibe hub structure

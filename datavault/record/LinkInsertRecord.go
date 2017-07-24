@@ -3,9 +3,10 @@ package record
 import (
 	"errors"
 	"fmt"
-	"gxdoc/datavault/definition"
-	"gxdoc/util"
 	"time"
+
+	"github.com/guinso/gxdoc/datavault/definition"
+	"github.com/guinso/gxdoc/util"
 )
 
 //LinkInsertRecord is link insert record schema

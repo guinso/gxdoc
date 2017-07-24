@@ -1,7 +1,7 @@
 package definition
 
 import "testing"
-import "gxdoc/database"
+import "github.com/guinso/gxdoc/database"
 
 func TestDataVaultDefinitionGenerateSQL(t *testing.T) {
 	dvDef := DataVaultDefinition{

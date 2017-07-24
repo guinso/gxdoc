@@ -3,8 +3,9 @@ package definition
 import (
 	"errors"
 	"fmt"
-	"gxdoc/database"
-	"gxdoc/util"
+
+	"github.com/guinso/gxdoc/database"
+	"github.com/guinso/gxdoc/util"
 )
 
 //SateliteDefinition is schema to describe satelite structure

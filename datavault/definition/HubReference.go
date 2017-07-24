@@ -2,7 +2,8 @@ package definition
 
 import (
 	"fmt"
-	"gxdoc/util"
+
+	"github.com/guinso/gxdoc/util"
 )
 
 //HubReference is schema used by Link and Satelink to describe reference to hub

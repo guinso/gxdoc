@@ -3,12 +3,13 @@ package record
 import (
 	"errors"
 	"fmt"
-	"gxdoc/database"
-	"gxdoc/datavault/definition"
-	"gxdoc/util"
 	"reflect"
 	"strconv"
 	"time"
+
+	"github.com/guinso/gxdoc/database"
+	"github.com/guinso/gxdoc/datavault/definition"
+	"github.com/guinso/gxdoc/util"
 )
 
 //SateliteInsertRecord is satelite insert record schema

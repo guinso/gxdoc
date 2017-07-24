@@ -3,7 +3,8 @@ package datavault
 import (
 	"database/sql"
 	"fmt"
-	"gxdoc/datavault/record"
+
+	"github.com/guinso/gxdoc/datavault/record"
 
 	///explicitly include GO mysql library
 	_ "github.com/go-sql-driver/mysql"

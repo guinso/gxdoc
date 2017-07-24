@@ -1,8 +1,9 @@
 package data
 
 import (
-	"gxdoc/document/schema"
 	"testing"
+
+	"github.com/guinso/gxdoc/document/schema"
 )
 
 func TestValidateXML(t *testing.T) {
