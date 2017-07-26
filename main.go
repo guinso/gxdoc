@@ -7,11 +7,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/guinso/gxdoc/database"
-	"github.com/guinso/gxdoc/datavault"
-	"github.com/guinso/gxdoc/datavault/definition"
-	"github.com/guinso/gxdoc/datavault/record"
+	"github.com/guinso/datavault"
+	"github.com/guinso/datavault/definition"
+	"github.com/guinso/datavault/record"
+	"github.com/guinso/datavault/sqlgenerator"
 	"github.com/guinso/gxdoc/util"
+	"github.com/guinso/stringtool"
 )
 
 //NOTE: work in progress (this is not actual use case)
@@ -102,8 +103,8 @@ func main() {
 	*/
 
 	loadDate := time.Date(2017, time.June, 20, 14, 10, 0, 0, &time.Location{})
-	invoiceHashKey := util.MakeMD5("inv004")
-	customerHashKey := util.MakeMD5("cus003")
+	invoiceHashKey := stringtool.MakeMD5("inv004")
+	customerHashKey := stringtool.MakeMD5("cus003")
 
 	satCustomerInsert := record.SateliteInsertRecord{
 		SateliteName:    "customer",
@@ -118,7 +119,7 @@ func main() {
 				Value:         "John",
 				Meta: &definition.SateliteAttributeDefinition{
 					Name:             "firstName",
-					DataType:         database.CHAR,
+					DataType:         sqlgenerator.CHAR,
 					Length:           32,
 					IsNullable:       false,
 					DecimalPrecision: 0}},
@@ -127,7 +128,7 @@ func main() {
 				Value:         "Doe",
 				Meta: &definition.SateliteAttributeDefinition{
 					Name:             "lastName",
-					DataType:         database.CHAR,
+					DataType:         sqlgenerator.CHAR,
 					Length:           32,
 					IsNullable:       false,
 					DecimalPrecision: 0}}}}
@@ -169,7 +170,7 @@ func main() {
 	linkInsert := record.LinkInsertRecord{
 		LinkName:     "invoiceItem",
 		LinkRevision: 0,
-		HashKey:      util.MakeMD5("1"),
+		HashKey:      stringtool.MakeMD5("1"),
 		RecordSource: "INVOICE",
 		LoadDate:     loadDate,
 		ReferenceHashKey: []record.LinkReferenceInsertRecord{
