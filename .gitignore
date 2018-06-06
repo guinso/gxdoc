@@ -1,5 +1,6 @@
 gxdoc.exe
 gxdoc
+debug
 
 # Binaries for programs and plugins
 *.exe
@@ -15,3 +16,10 @@ gxdoc
 
 # Project-local glide cache, RE: https://github.com/Masterminds/glide/issues/736
 .glide/
+
+# Configuration File
+config.ini
+
+static-files
+logical-files
+dev-static-files

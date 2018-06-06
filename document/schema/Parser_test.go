@@ -6,7 +6,8 @@ import (
 )
 
 func TestParseDocSchema(t *testing.T) {
-	xml := `<documentschema name="invoice" revision="1">
+	xml := `
+	<documentschema name="invoice" revision="1">
 		<validation script="js">return true</validation>
 		<char name="jojo" charlen="32"></char>
 		<text name="bobo" ></text>
