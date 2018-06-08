@@ -32,6 +32,9 @@ func TestGetSchema(t *testing.T) {
 	if strings.Compare(invoice.Name, "invoice") != 0 {
 		t.Errorf("expect document name is 'invoice' but get '%s'", invoice.Name)
 	}
+	if invoice.ID != 1 {
+		t.Errorf("expect ID is 1 but get %d", invoice.ID)
+	}
 
 	dxstr, strOK := invoice.Items[0].(*gxschema.DxStr)
 	if !strOK {
@@ -68,6 +71,41 @@ func TestGetSchema2(t *testing.T) {
 	}
 }
 
+func TestGetSchemaByID(t *testing.T) {
+	testDb, dbErr := testutil.GetTestDB()
+	if dbErr != nil {
+		t.Fatal(dbErr)
+		return
+	}
+
+	invoice, dxErr := GetSchemaByID(testDb, 1)
+	if dxErr != nil {
+		t.Fatal(dxErr)
+		return
+	}
+
+	if invoice == nil {
+		t.Fatal("expect invoice schema definition record is within database")
+	}
+
+	if invoice.Revision != 2 {
+		t.Errorf("expect latest revision is 2 but get %d instead", invoice.Revision)
+	}
+	if strings.Compare(invoice.Name, "invoice") != 0 {
+		t.Errorf("expect document name is 'invoice' but get '%s'", invoice.Name)
+	}
+	if invoice.ID != 1 {
+		t.Errorf("expect ID is 1 but get %d", invoice.ID)
+	}
+
+	dxstr, strOK := invoice.Items[0].(*gxschema.DxStr)
+	if !strOK {
+		t.Errorf("expect first item is DxStr but get %s", reflect.TypeOf(invoice.Items[0]))
+	} else if strings.Compare(dxstr.Name, "invNo") != 0 {
+		t.Errorf("expect item[0] name id 'invNo' but get '%s'", dxstr.Name)
+	}
+}
+
 func TestGetSchemaByRevision(t *testing.T) {
 	testDb, dbErr := testutil.GetTestDB()
 	if dbErr != nil {
@@ -83,6 +121,9 @@ func TestGetSchemaByRevision(t *testing.T) {
 
 	if invoice.Revision != 1 {
 		t.Errorf("expect latest revision is 1 but get %d instead", invoice.Revision)
+	}
+	if invoice.ID != 1 {
+		t.Errorf("expect ID is 1 but get %d", invoice.ID)
 	}
 }
 
@@ -127,7 +168,7 @@ func TestAddSchema(t *testing.T) {
 		},
 	}
 
-	latestRev, addErr := AddSchema(trx, &doc, "sample 1")
+	latestRev, addErr := AddSchema(trx, "invoice", &doc, "sample 1")
 	if addErr != nil {
 		t.Error(addErr)
 		return
@@ -263,5 +304,77 @@ func TestGetDraftSchema(t *testing.T) {
 	if draftDoc == nil {
 		t.Errorf("expect there is draft document schema in database")
 		return
+	}
+}
+
+func TestSaveDraftToNewRevision(t *testing.T) {
+	db, dbErr := testutil.GetTestDB()
+	if dbErr != nil {
+		t.Fatal(dbErr)
+		return
+	}
+
+	trx, trxErr := db.Begin()
+	if trxErr != nil {
+		t.Fatal(trxErr)
+		return
+	}
+
+	defer trx.Rollback()
+
+	darftErr := SaveDraftToNewRevision(trx, "pr")
+	if darftErr != nil {
+		t.Error(darftErr)
+		return
+	}
+
+	prInfo, infoErr := GetSchemaByRevision(trx, "pr", -1)
+	if infoErr != nil {
+		t.Error(infoErr)
+		return
+	}
+	if prInfo != nil {
+		t.Errorf("exepct pr has no draft mode anyomre")
+	}
+}
+
+func TestUpdateDraftSchema(t *testing.T) {
+	db, dbErr := testutil.GetTestDB()
+	if dbErr != nil {
+		t.Fatal(dbErr)
+		return
+	}
+
+	trx, trxErr := db.Begin()
+	if trxErr != nil {
+		t.Fatal(trxErr)
+		return
+	}
+
+	defer trx.Rollback()
+
+	dxdoc := gxschema.DxDoc{
+		Name:     "pr",
+		Revision: -1,
+		Items: []gxschema.DxItem{
+			gxschema.DxInt{Name: "qty"},
+			gxschema.DxStr{Name: "pr number", EnableLenLimit: true, LenLimit: 6},
+			gxschema.DxBool{Name: "mandatory"},
+		},
+	}
+
+	updatErr := UpdateDraftSchema(trx, &dxdoc)
+	if updatErr != nil {
+		t.Error(updatErr)
+		return
+	}
+
+	pr, prErr := GetDraftSchema(trx, "pr")
+	if prErr != nil {
+		t.Error(prErr)
+		return
+	}
+	if len(pr.Items) != 3 {
+		t.Errorf("expect PR draft has 3 definition but get %d instead", len(pr.Items))
 	}
 }

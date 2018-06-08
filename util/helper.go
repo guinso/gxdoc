@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/guinso/rdbmstool"
+
 	"github.com/guinso/stringtool"
 
 	//explicitly include GO mysql library
@@ -106,4 +108,25 @@ func IsDirectoryExists(directoryName string) (bool, error) {
 	}
 
 	return stat.IsDir(), nil
+}
+
+//GetDBColumnMaxInt get maximum integer value from particular data table's column
+func GetDBColumnMaxInt(db rdbmstool.DbHandlerProxy, tableName string, columnName string) (int, error) {
+	var tmpInt sql.NullInt64
+	sqlStr := fmt.Sprintf("SELECT MAX(%s) FROM %s", columnName, tableName)
+	row := db.QueryRow(sqlStr)
+	scanErr := row.Scan(&tmpInt)
+	if scanErr != nil {
+		if scanErr == sql.ErrNoRows {
+			return 0, nil
+		}
+
+		return 0, scanErr
+	}
+
+	if tmpInt.Valid {
+		return int(tmpInt.Int64), nil
+	}
+
+	return 0, nil
 }
