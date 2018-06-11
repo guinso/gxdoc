@@ -127,7 +127,7 @@ func GetSchemaByID(db rdbmstool.DbHandlerProxy, id int) (*gxschema.DxDoc, error)
 //AddSchema register document schema into database
 //RETURN:
 //	int: latest revision number
-//NOTE: ErrSchemaInfoNotFound error will return if document not register yet in doc_schema_info datatable
+//NOTE: ErrSchemaInfoNotFound error will return if document not register yet in doc_schema datatable
 func AddSchema(db rdbmstool.DbHandlerProxy, schemaName string, doc *gxschema.DxDoc, remark string) (int, error) {
 	//check SchemaInfo is registered
 	schemaInfo, infoErr := GetSchemaInfo(db, schemaName)
@@ -190,26 +190,26 @@ func AddSchema(db rdbmstool.DbHandlerProxy, schemaName string, doc *gxschema.DxD
 
 //SaveSchemaAsDraft save document schema as draft.
 //	draft doc schema shall not affect production record
-//NOTE: Existed draft record with same document name will be overwrite
-//NOTE: ErrSchemaInfoNotFound error will return if document not register yet in doc_schema_info datatable
-func SaveSchemaAsDraft(db rdbmstool.DbHandlerProxy, doc *gxschema.DxDoc, remark string) error {
+//NOTE: if draft already exists, XML definition and remark will be overwriten
+//NOTE: ErrSchemaInfoNotFound error will return if document not register in doc_schema datatable
+func SaveSchemaAsDraft(db rdbmstool.DbHandlerProxy, schemaName string, doc *gxschema.DxDoc, remark string) error {
 	xmlStr, xmlErr := doc.XML()
 	if xmlErr != nil {
 		return fmt.Errorf("failed convert doc schema into XML schema format: %s", xmlErr.Error())
 	}
 
 	//check SchemaInfo is registered
-	schemaInfo, infoErr := GetSchemaInfo(db, doc.Name)
+	schemaInfo, infoErr := GetSchemaInfo(db, schemaName)
 	if infoErr != nil {
 		return infoErr
 	}
 	if schemaInfo == nil {
-		return ErrSchemaInfoNotFound{msg: doc.Name + " not found in record"}
+		return ErrSchemaInfoNotFound{msg: schemaName + " not found in database"}
 	}
 
 	//check draft record is registered on database or not
-	sqlStr1 := `SELECT COUNT(name) FROM doc_schema WHERE name = ? AND revision = -1 GROUP BY name`
-	row := db.QueryRow(sqlStr1, doc.Name)
+	sqlStr1 := `SELECT COUNT(schema_id) FROM doc_schema_revision WHERE schema_id = ? AND revision = -1`
+	row := db.QueryRow(sqlStr1, schemaInfo.ID)
 	var count int
 	fetchErr := row.Scan(&count)
 	if fetchErr != nil {
@@ -222,17 +222,17 @@ func SaveSchemaAsDraft(db rdbmstool.DbHandlerProxy, doc *gxschema.DxDoc, remark 
 
 	if count == 0 {
 		//create a new record
-		insertSQL := `INSERT INTO doc_schema (name, revision, xml_definition, remark) VALUES(?,-1,?,?)`
-		_, dbErr := db.Exec(insertSQL, doc.Name, xmlStr, remark)
+		insertSQL := `INSERT INTO doc_schema_revision (schema_id, revision, xml_definition, remark) VALUES(?,-1,?,?)`
+		_, dbErr := db.Exec(insertSQL, schemaInfo.ID, xmlStr, remark)
 		if dbErr != nil {
-			return fmt.Errorf("failed to save %s as draft into database: %s", doc.Name, dbErr.Error())
+			return fmt.Errorf("failed to save %s as draft into database: %s", schemaName, dbErr.Error())
 		}
 	} else {
 		//update XML_dfinition column
-		updateSQL := `UPDATE doc_schema SET xml_definition = ?, remark = ? WHERE name = ? AND revision = -1`
-		_, dbErr := db.Exec(updateSQL, xmlStr, remark, doc.Name)
+		updateSQL := `UPDATE doc_schema_revision SET xml_definition = ?, remark = ? WHERE schema_id = ? AND revision = -1`
+		_, dbErr := db.Exec(updateSQL, xmlStr, remark, schemaInfo.ID)
 		if dbErr != nil {
-			return fmt.Errorf("failed to save %s as draft into database: %s", doc.Name, dbErr.Error())
+			return fmt.Errorf("failed to save %s as draft into database: %s", schemaName, dbErr.Error())
 		}
 	}
 
@@ -241,59 +241,37 @@ func SaveSchemaAsDraft(db rdbmstool.DbHandlerProxy, doc *gxschema.DxDoc, remark 
 
 //SaveDraftToNewRevision convert draft into new revision
 //Will return ErrDraftNotFound error if no draft available
-func SaveDraftToNewRevision(db rdbmstool.DbHandlerProxy, name string) error {
-	row := db.QueryRow(`SELECT COUNT(name) FROM doc_schema WHERE name = ? AND revision = -1`, name)
+func SaveDraftToNewRevision(db rdbmstool.DbHandlerProxy, schemaName string) error {
+	//check SchemaInfo is registered
+	schemaInfo, infoErr := GetSchemaInfo(db, schemaName)
+	if infoErr != nil {
+		return infoErr
+	}
+	if schemaInfo == nil {
+		return ErrSchemaInfoNotFound{msg: schemaName + " not found in database"}
+	}
+
+	row := db.QueryRow(`SELECT COUNT(schema_id) FROM doc_schema_revision WHERE schema_id = ? AND revision = -1`, schemaInfo.ID)
 	var tmpInt int
 	rowErr := row.Scan(&tmpInt)
 	if rowErr != nil {
 		if rowErr == sql.ErrNoRows {
-			return ErrDraftNotFound{msg: fmt.Sprintf("no draft found for %s", name)}
+			return ErrDraftNotFound{msg: fmt.Sprintf("no draft found for %s", schemaName)}
 		}
 
 		return fmt.Errorf("failed to fetch record from database: %s", rowErr.Error())
 	}
 
 	if tmpInt == 0 {
-		return ErrDraftNotFound{msg: fmt.Sprintf("no draft found for %s", name)}
-	}
-
-	info, infoErr := GetSchemaInfo(db, name)
-	if infoErr != nil {
-		return infoErr
+		return ErrDraftNotFound{msg: fmt.Sprintf("no draft found for %s", schemaName)}
 	}
 
 	_, updateErr := db.Exec(
-		`UPDATE doc_schema SET revision = ? WHERE name = ? AND revision = -1`,
-		info.LatestRevision+1, name)
+		`UPDATE doc_schema_revision SET revision = ? WHERE schema_id = ? AND revision = -1`,
+		schemaInfo.LatestRevision+1, schemaInfo.ID)
 	if updateErr != nil {
 		return fmt.Errorf("failed to convert %s draft mode to release revision: %s",
-			info.Name, updateErr.Error())
-	}
-
-	return nil
-}
-
-//UpdateDraftSchema update draft's xml definition
-//Will return ErrDraftNotFound error if no draft in database
-func UpdateDraftSchema(db rdbmstool.DbHandlerProxy, schema *gxschema.DxDoc) error {
-	info, infoErr := GetSchemaByRevision(db, schema.Name, -1)
-	if infoErr != nil {
-		return fmt.Errorf("failed to fetch data from database: %s", infoErr.Error())
-	}
-	if info == nil {
-		return ErrDraftNotFound{msg: fmt.Sprintf("no %s draft found in database", schema.Name)}
-	}
-
-	xmlStr, xmlErr := schema.XML()
-	if xmlErr != nil {
-		return fmt.Errorf("failed to generate XML string: %s", xmlErr.Error())
-	}
-
-	_, updateErr := db.Exec(
-		`UPDATE doc_schema SET xml_definition = ? WHERE name = ? AND revision = -1`,
-		xmlStr, schema.Name)
-	if updateErr != nil {
-		return fmt.Errorf("failed to update %s draft: %s", schema.Name, updateErr.Error())
+			schemaInfo.Name, updateErr.Error())
 	}
 
 	return nil

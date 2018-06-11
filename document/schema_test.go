@@ -222,7 +222,7 @@ func TestSaveSchemaAsDraft(t *testing.T) {
 		},
 	}
 
-	draftErr := SaveSchemaAsDraft(trx, &doc, "try save as new record")
+	draftErr := SaveSchemaAsDraft(trx, "invoice", &doc, "try save as new record")
 	if draftErr != nil {
 		t.Error(draftErr)
 		return
@@ -238,7 +238,7 @@ func TestSaveSchemaAsDraft(t *testing.T) {
 	}
 
 	doc.Items = append(doc.Items, &gxschema.DxStr{Name: "description"})
-	draftErr = SaveSchemaAsDraft(trx, &doc, "try save as an update")
+	draftErr = SaveSchemaAsDraft(trx, "invoice", &doc, "try save as an update")
 	if draftErr != nil {
 		t.Error(draftErr)
 	}
@@ -291,7 +291,7 @@ func TestGetDraftSchema(t *testing.T) {
 		return
 	}
 
-	draftErr := SaveSchemaAsDraft(trx, &doc, "add draft record and try retrieve from database again")
+	draftErr := SaveSchemaAsDraft(trx, "invoice", &doc, "add draft record and try retrieve from database again")
 	if draftErr != nil {
 		t.Error(draftErr)
 		return
@@ -335,46 +335,5 @@ func TestSaveDraftToNewRevision(t *testing.T) {
 	}
 	if prInfo != nil {
 		t.Errorf("exepct pr has no draft mode anyomre")
-	}
-}
-
-func TestUpdateDraftSchema(t *testing.T) {
-	db, dbErr := testutil.GetTestDB()
-	if dbErr != nil {
-		t.Fatal(dbErr)
-		return
-	}
-
-	trx, trxErr := db.Begin()
-	if trxErr != nil {
-		t.Fatal(trxErr)
-		return
-	}
-
-	defer trx.Rollback()
-
-	dxdoc := gxschema.DxDoc{
-		Name:     "pr",
-		Revision: -1,
-		Items: []gxschema.DxItem{
-			gxschema.DxInt{Name: "qty"},
-			gxschema.DxStr{Name: "pr number", EnableLenLimit: true, LenLimit: 6},
-			gxschema.DxBool{Name: "mandatory"},
-		},
-	}
-
-	updatErr := UpdateDraftSchema(trx, &dxdoc)
-	if updatErr != nil {
-		t.Error(updatErr)
-		return
-	}
-
-	pr, prErr := GetDraftSchema(trx, "pr")
-	if prErr != nil {
-		t.Error(prErr)
-		return
-	}
-	if len(pr.Items) != 3 {
-		t.Errorf("expect PR draft has 3 definition but get %d instead", len(pr.Items))
 	}
 }
