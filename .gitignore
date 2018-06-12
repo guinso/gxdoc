@@ -20,6 +20,6 @@ debug
 # Configuration File
 config.ini
 
-static-files
-logical-files
-dev-static-files
+static-files-dev
+static-files-prod
+logical-files-prod
