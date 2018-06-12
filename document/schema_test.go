@@ -32,8 +32,8 @@ func TestGetSchema(t *testing.T) {
 	if strings.Compare(invoice.Name, "invoice") != 0 {
 		t.Errorf("expect document name is 'invoice' but get '%s'", invoice.Name)
 	}
-	if invoice.ID != 1 {
-		t.Errorf("expect ID is 1 but get %d", invoice.ID)
+	if strings.Compare(invoice.ID, "733bee1b-f79a-4cb7-b675-842317b994b5") != 0 {
+		t.Errorf("expect ID is 1 but get %s", invoice.ID)
 	}
 
 	dxstr, strOK := invoice.Items[0].(*gxschema.DxStr)
@@ -78,7 +78,7 @@ func TestGetSchemaByID(t *testing.T) {
 		return
 	}
 
-	invoice, dxErr := GetSchemaByID(testDb, 1)
+	invoice, dxErr := GetSchemaByID(testDb, "733bee1b-f79a-4cb7-b675-842317b994b5")
 	if dxErr != nil {
 		t.Fatal(dxErr)
 		return
@@ -94,8 +94,8 @@ func TestGetSchemaByID(t *testing.T) {
 	if strings.Compare(invoice.Name, "invoice") != 0 {
 		t.Errorf("expect document name is 'invoice' but get '%s'", invoice.Name)
 	}
-	if invoice.ID != 1 {
-		t.Errorf("expect ID is 1 but get %d", invoice.ID)
+	if strings.Compare(invoice.ID, "733bee1b-f79a-4cb7-b675-842317b994b5") != 0 {
+		t.Errorf("expect ID is 1 but get %s", invoice.ID)
 	}
 
 	dxstr, strOK := invoice.Items[0].(*gxschema.DxStr)
@@ -122,8 +122,8 @@ func TestGetSchemaByRevision(t *testing.T) {
 	if invoice.Revision != 1 {
 		t.Errorf("expect latest revision is 1 but get %d instead", invoice.Revision)
 	}
-	if invoice.ID != 1 {
-		t.Errorf("expect ID is 1 but get %d", invoice.ID)
+	if strings.Compare(invoice.ID, "733bee1b-f79a-4cb7-b675-842317b994b5") != 0 {
+		t.Errorf("expect ID is 733bee1b-f79a-4cb7-b675-842317b994b5 but get %s", invoice.ID)
 	}
 }
 

@@ -4,13 +4,14 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/guinso/gxdoc/util"
+	"github.com/guinso/stringtool"
+
 	"github.com/guinso/rdbmstool"
 )
 
 //SchemaInfo summary of document schema
 type SchemaInfo struct {
-	ID             int
+	ID             string
 	Name           string
 	LatestRevision int
 	Description    string
@@ -28,8 +29,8 @@ func GetSchemaInfo(db rdbmstool.DbHandlerProxy, name string) (*SchemaInfo, error
 	GROUP BY a.name`
 
 	row := db.QueryRow(sqlStr, name)
-	var tmpName, tmpDesc string
-	var tmpID, tmpIsActive int
+	var tmpID, tmpName, tmpDesc string
+	var tmpIsActive int
 	var tmpLatestRev, tmpHasDraft sql.NullInt64
 	scanErr := row.Scan(&tmpID, &tmpName, &tmpDesc, &tmpIsActive, &tmpLatestRev, &tmpHasDraft)
 	if scanErr != nil {
@@ -65,7 +66,7 @@ func GetSchemaInfo(db rdbmstool.DbHandlerProxy, name string) (*SchemaInfo, error
 }
 
 //GetSchemaInfoByID get schema info from database by ID
-func GetSchemaInfoByID(db rdbmstool.DbHandlerProxy, IDD int) (*SchemaInfo, error) {
+func GetSchemaInfoByID(db rdbmstool.DbHandlerProxy, IDD string) (*SchemaInfo, error) {
 	sqlStr := `SELECT a.name, a.description,  a.is_active, 
 	MAX(b.revision), SUM(CASE  WHEN b.revision = -1 THEN 1 ELSE 0 END)
 	FROM doc_schema a
@@ -111,8 +112,8 @@ func GetAllSchemaInfo(db rdbmstool.DbHandlerProxy) ([]SchemaInfo, error) {
 
 	defer rows.Close()
 
-	var tmpName, tmpDesc string
-	var tmpID, tmpLatestRev, tmpIsActive, tmpHasDraft int
+	var tmpID, tmpName, tmpDesc string
+	var tmpLatestRev, tmpIsActive, tmpHasDraft int
 	results := []SchemaInfo{}
 	for rows.Next() {
 		scanErr := rows.Scan(&tmpID, &tmpName, &tmpDesc, &tmpIsActive, &tmpLatestRev, &tmpHasDraft)
@@ -187,14 +188,18 @@ func AddSchemaInfo(db rdbmstool.DbHandlerProxy, name string, description string)
 	}
 
 	//get next ID
-	currentID, currErr := util.GetDBColumnMaxInt(db, "doc_schema", "id")
-	if currErr != nil {
-		return fmt.Errorf("failed to acquire latest record ID: %s", currErr.Error())
+	// currentID, currErr := util.GetDBColumnMaxInt(db, "doc_schema", "id")
+	// if currErr != nil {
+	// 	return fmt.Errorf("failed to acquire latest record ID: %s", currErr.Error())
+	// }
+	// currentID++
+	newID, idErr := stringtool.GenerateRandomUUID()
+	if idErr != nil {
+		return fmt.Errorf("failed to generate ID for new schema %s", name)
 	}
-	currentID++
 
 	sqlInsert := `INSERT INTO doc_schema (id, name, description, is_active) VALUES (?,?,?,1)`
-	_, dbErr := db.Exec(sqlInsert, currentID, name, description)
+	_, dbErr := db.Exec(sqlInsert, newID, name, description)
 	if dbErr != nil {
 		return fmt.Errorf("failed to create %s schemaInfo into database: %s", name, dbErr.Error())
 	}

@@ -17,8 +17,8 @@ func measureExecTime(startTime time.Time) {
 	log.Println(fmt.Sprintf("exec time: %s", elapsed))
 }
 
-//handle dynamic HTTP user requset
-func routePath(w http.ResponseWriter, r *http.Request, trimURL string) {
+//routeProductionAPI handle dynamic HTTP user requset
+func routeProductionAPI(w http.ResponseWriter, r *http.Request, trimURL string) {
 
 	/***********************************************/
 	//TODO: add your custom web API here:

@@ -38,7 +38,7 @@ func TestGetSchemaInfoByID(t *testing.T) {
 		return
 	}
 
-	tmp, tmpErr := GetSchemaInfoByID(db, 1)
+	tmp, tmpErr := GetSchemaInfoByID(db, "733bee1b-f79a-4cb7-b675-842317b994b5")
 	if tmpErr != nil {
 		t.Error(tmpErr)
 	}
@@ -46,12 +46,12 @@ func TestGetSchemaInfoByID(t *testing.T) {
 		t.Errorf("expect invoice is registed on database")
 	}
 
-	tmp, tmpErr = GetSchemaInfoByID(db, 3)
+	tmp, tmpErr = GetSchemaInfoByID(db, "asdqwe")
 	if tmpErr != nil {
 		t.Error(tmpErr)
 	}
 	if tmp != nil {
-		t.Errorf("expect no record (ID 3) is registed on database")
+		t.Errorf("expect no record (ID asdqwe) is registed on database")
 	}
 }
 
@@ -72,12 +72,22 @@ func TestGetAllSchemaInfo(t *testing.T) {
 		return
 	}
 
-	if items[1].HasDraft != true {
-		t.Errorf("expect items[1] has draft mode")
-	}
+	if strings.Compare(items[0].ID, "733bee1b-f79a-4cb7-b675-842317b994b5") == 0 {
+		if items[1].HasDraft != true {
+			t.Errorf("expect items[1] has draft mode")
+		}
 
-	if items[0].HasDraft != false {
-		t.Errorf("expect items[0] has no draft mode")
+		if items[0].HasDraft != false {
+			t.Errorf("expect items[0] has no draft mode")
+		}
+	} else {
+		if items[0].HasDraft != true {
+			t.Errorf("expect items[0] has draft mode")
+		}
+
+		if items[1].HasDraft != false {
+			t.Errorf("expect items[1] has no draft mode")
+		}
 	}
 }
 
@@ -98,7 +108,7 @@ func TestUpdateSchemaInfo(t *testing.T) {
 
 	invInfo := SchemaInfo{
 		Name:        "invoice 123",
-		ID:          1,
+		ID:          "733bee1b-f79a-4cb7-b675-842317b994b5",
 		Description: "blah...",
 		IsActive:    false,
 	}
@@ -120,8 +130,8 @@ func TestUpdateSchemaInfo(t *testing.T) {
 		return
 	}
 
-	if newInvInfo.ID != 1 {
-		t.Errorf("expect invoice ID is 1 but get %d", newInvInfo.ID)
+	if strings.Compare(newInvInfo.ID, "733bee1b-f79a-4cb7-b675-842317b994b5") != 0 {
+		t.Errorf("expect invoice ID is 733bee1b-f79a-4cb7-b675-842317b994b5 but get %s", newInvInfo.ID)
 	}
 
 	if newInvInfo.IsActive == true {
@@ -160,9 +170,6 @@ func TestAddSchemaInfo(t *testing.T) {
 		return
 	}
 
-	if po.ID != 3 {
-		t.Errorf("expect PO ID is 3 but get %d", po.ID)
-	}
 	if strings.Compare(po.Description, "purchase order") != 0 {
 		t.Errorf("expect PO description is 'purchase order' but get '%s'", po.Description)
 	}

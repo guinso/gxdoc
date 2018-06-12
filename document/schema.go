@@ -27,7 +27,7 @@ func GetSchema(db rdbmstool.DbHandlerProxy, name string) (*gxschema.DxDoc, error
 
 	var xmlDef string
 	var tmpRev int
-	var tmpID int
+	var tmpID string
 	err := row.Scan(&xmlDef, &tmpRev, &tmpID)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -60,7 +60,7 @@ func GetSchemaByRevision(db rdbmstool.DbHandlerProxy, name string, revision int)
 	row := db.QueryRow(sqlStr, name, revision)
 
 	var xmlDef string
-	var tmpID int
+	var tmpID string
 	err := row.Scan(&xmlDef, &tmpID)
 
 	if err != nil {
@@ -87,7 +87,7 @@ func GetSchemaByRevision(db rdbmstool.DbHandlerProxy, name string, revision int)
 }
 
 //GetSchemaByID get document schema from database by schema_id
-func GetSchemaByID(db rdbmstool.DbHandlerProxy, id int) (*gxschema.DxDoc, error) {
+func GetSchemaByID(db rdbmstool.DbHandlerProxy, id string) (*gxschema.DxDoc, error) {
 	sqlStr := `SELECT b.xml_definition, a.latest_revision, c.name
 	FROM (
 	SELECT schema_id, MAX(revision) AS latest_revision FROM doc_schema_revision
@@ -107,7 +107,7 @@ func GetSchemaByID(db rdbmstool.DbHandlerProxy, id int) (*gxschema.DxDoc, error)
 			return nil, nil //return NULL for record not found in database
 		}
 
-		return nil, fmt.Errorf("Failed to fetch doc_schema ID %d from DB : %s", id, err.Error())
+		return nil, fmt.Errorf("Failed to fetch doc_schema ID %s from DB : %s", id, err.Error())
 	}
 
 	//convert into DxDoc instance

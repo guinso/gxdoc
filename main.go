@@ -68,7 +68,7 @@ func checkDbConnection(config *configuration.ConfigInfo) (*sql.DB, error) {
 func startWebServer() error {
 	config := configuration.GetConfig()
 
-	routing.SetConfig(config.StaticDir, config.DevEnable, config.DevStartURL, "dev-static-files")
+	routing.SetConfig(config.StaticDir, config.DevEnable, config.DevStartURL, "static-files-dev")
 
 	http.HandleFunc("/", routing.HandleRouting)
 

@@ -8,7 +8,7 @@ import (
 )
 
 var enableDevMode = false
-var devStartURL = "dev"
+var devStartURL string
 
 var staticPath string
 var devStaticPath string
@@ -45,21 +45,31 @@ func HandleRouting(w http.ResponseWriter, r *http.Request) {
 		}
 
 		//if start with "api/" direct to REST handler
-		if strings.HasPrefix(urlPath, "api/") {
-			routeDevPath(w, r, urlPath[4:])
+		if strings.HasPrefix(urlPath, "api/") || strings.Compare(urlPath, "api") == 0 {
+			log.Println("route handle by development API")
+			if strings.HasPrefix(urlPath, "api/") {
+				routeDevelopmentAPI(w, r, urlPath[4:]) //trim: 'api/'
+			} else {
+				routeDevelopmentAPI(w, r, "")
+			}
 		} else {
+			log.Println("route handle by development static file")
 			//other wise, lets read a file path and display to client
 			http.ServeFile(w, r, "./"+devStaticPath+"/"+urlPath)
 		}
 
 	} else {
 		//if start with "api/" direct to REST handler
-		if strings.HasPrefix(urlPath, "api/") {
-			//trim prefix "api/"
-			urlPath := urlPath[4:]
+		if strings.HasPrefix(urlPath, "api/") || strings.Compare(urlPath, "api") == 0 {
+			log.Println("route handle by production API")
+			if strings.HasPrefix(urlPath, "api/") {
+				routeProductionAPI(w, r, urlPath[4:]) //trim: "api/"
+			} else {
+				routeProductionAPI(w, r, "")
+			}
 
-			routePath(w, r, urlPath)
 		} else {
+			log.Println("route handle by production stati file")
 			//other wise, lets read a file path and display to client
 			http.ServeFile(w, r, "./"+staticPath+"/"+urlPath)
 		}
