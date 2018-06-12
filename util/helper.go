@@ -68,22 +68,22 @@ func SendHTTPErrorResponse(w http.ResponseWriter) {
 
 //IsPOST check request HTTP is POST method
 func IsPOST(r *http.Request) bool {
-	return strings.Compare(strings.ToLower(r.Method), "post") == 0
+	return strings.Compare(r.Method, "POST") == 0
 }
 
 //IsGET check request HTTP is GET method
 func IsGET(r *http.Request) bool {
-	return strings.Compare(strings.ToLower(r.Method), "get") == 0
+	return strings.Compare(r.Method, "GET") == 0
 }
 
 //IsPUT check request HTTP is PUT method
 func IsPUT(r *http.Request) bool {
-	return strings.Compare(strings.ToLower(r.Method), "put") == 0
+	return strings.Compare(r.Method, "PUT") == 0
 }
 
 //IsDELETE check request HTTP is DELETE method
 func IsDELETE(r *http.Request) bool {
-	return strings.Compare(strings.ToLower(r.Method), "delete") == 0
+	return strings.Compare(r.Method, "DELETE") == 0
 }
 
 //IsFileExists check specify file path is exists or not

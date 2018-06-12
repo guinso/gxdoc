@@ -1,4 +1,4 @@
-package fileAndDir
+package initializeSequence
 
 import (
 	"fmt"
