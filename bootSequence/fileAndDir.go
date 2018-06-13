@@ -1,4 +1,4 @@
-package initializeSequence
+package bootSequence
 
 import (
 	"fmt"

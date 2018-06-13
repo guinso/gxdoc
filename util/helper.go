@@ -52,8 +52,8 @@ func GetRandomRunningNumber(tableName string) string {
 
 //SendHTTPResponse send HTTP response
 func SendHTTPResponse(w http.ResponseWriter, statusCode int, statusMsg string, json string) {
+	w.Header().Set("Content-Type", "application/json; charset=utf8")
 	w.WriteHeader(200)
-	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(fmt.Sprintf(
 		"{\"statusCode\":%d, \"statusMsg\":\"%s\", \"response\":%s}",
 		statusCode, statusMsg, json)))
@@ -61,8 +61,8 @@ func SendHTTPResponse(w http.ResponseWriter, statusCode int, statusMsg string, j
 
 //SendHTTPErrorResponse send HTTP 500 internal error response
 func SendHTTPErrorResponse(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json; charset=utf8")
 	w.WriteHeader(500)
-	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte("{msg:\"Encounter internal server error\"}"))
 }
 

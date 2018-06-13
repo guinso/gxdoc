@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/guinso/gxdoc/bootSequence"
 	"github.com/guinso/gxdoc/configuration"
-	"github.com/guinso/gxdoc/initializeSequence"
 	"github.com/guinso/gxdoc/util"
 )
 
@@ -29,7 +29,7 @@ func main() {
 	fmt.Println("\t\t[OK]")
 
 	fmt.Print("creating directories...")
-	if dirErr := initializeSequence.InitStaticAndLogicDirectories(configuration.GetConfig()); dirErr != nil {
+	if dirErr := bootSequence.InitStaticAndLogicDirectories(configuration.GetConfig()); dirErr != nil {
 		fmt.Println("\t\t\t\t[FAILED]")
 		panic(dirErr)
 	}
@@ -67,9 +67,9 @@ func checkDbConnection(config *configuration.ConfigInfo) (*sql.DB, error) {
 func startWebServer() error {
 	config := configuration.GetConfig()
 
-	initializeSequence.SetConfig(config.StaticDir, config.DevEnable, config.DevStartURL, "static-files-dev")
+	bootSequence.SetConfig(config.StaticDir, config.DevEnable, config.DevStartURL, "static-files-dev")
 
-	http.HandleFunc("/", initializeSequence.HandleRouting)
+	http.HandleFunc("/", bootSequence.HandleRouting)
 
 	return http.ListenAndServe(fmt.Sprintf(":%d", config.PortNumber), nil)
 }
