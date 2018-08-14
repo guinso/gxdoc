@@ -10,22 +10,22 @@ evaluate golang on building up traceable document system
 ### API Summary
 |HTTP Method|URL|Description|
 | --- | --- | --- |
-| GET | localhost/{dev-start-url}/api/document/schemas | get schema summaries |
-| POST | localhost/{dev-start-url}/api/document/schemas | create new schema |
-| GET | localhost/{dev-start-url}/api/document/schemas/{schema-name} | get specific schema summary |
-| POST | localhost/{dev-start-url}/api/document/schemas/{schema-name} | update schema summary |
-| GET | localhost/{dev-start-url}/api/document/schemas/{schema-name}/revisions/{revision-number} | get specific schema definition by revision number |
-| GET | localhost/{dev-start-url}/api/document/schemas/{schema-name}/latest | get latest schema definition |
-| POST | localhost/{dev-start-url}/api/document/schemas/{schema-name}/latest | update schema definition to latest revision |
-| GET | localhost/{dev-start-url}/api/document/schemas/{schema-name}/draft | get draft version of schema definition |
-| POST | localhost/{dev-start-url}/api/document/schemas/{schema-name}/draft | update draft version of schema definition | 
+| GET | /api/document/schema-infos | get all schema info |
+| POST | /api/document/schema-infos | create new schema info |
+| GET | /api/document/schema-infos/{schema-name} | get specific schema info |
+| POST | /api/document/schema-infos/{schema-name} | update schema info |
+| GET | /api/document/schemas/{schema-name}/revisions/{revision-number} | get specific schema definition by revision number |
+| GET | /api/document/schemas/{schema-name} | get latest schema definition |
+| POST | /api/document/schemas/{schema-name} | update schema definition to latest revision |
+| GET | /api/document/schemas/{schema-name}/draft | get draft version of schema definition |
+| POST | /api/document/schemas/{schema-name}/draft | update draft version of schema definition | 
 
-### Get list of Schema Summary
+### Get list of Schema Infomation
 NOTE: <i><b>{dev-start-url}</b> is defined in config.ini file</i>
 
 URL Pattern:    
 ```
-GET localhost/{dev-start-url}/api/document/schemas
+GET /api/document/schema-infos
 ```
 Output:
 ```json
@@ -51,10 +51,10 @@ Output:
 }
 ```
 
-### Get Schema Summary By Schema Name
+### Get Schema Information By Schema Name
 URL Pattern:
 ```
-GET localhost/{dev-start-url}/api/document/schemas/{schema-name}
+GET /api/document/schema-infos/{schema-name}
 ```
 Output:
 ```json
@@ -71,10 +71,10 @@ Output:
 }
 ```
 
-### Register New Schema Summary
+### Register New Schema Information
 URL Pattern:
 ```
-POST localhost/{dev-start-url}/api/document/schemas
+POST /api/document/schema-infos
 ```
 Input Data (sample):
 ```json
@@ -84,10 +84,10 @@ Input Data (sample):
 }
 ```
 
-### Update Schema Summary
+### Update Schema Information
 URL Pattern:
 ```
-POST localhost/{dev-start-url}/api/document/schemas/{schema-name}
+POST /api/document/schema-infos/{schema-name}
 ```
 Input Data (sample):
 ```json
@@ -101,7 +101,7 @@ Input Data (sample):
 ### Get Latest Schema Definition
 URL Pattern:
 ```
-GET localhost/{dev-start-url}/api/document/schemas/{schema-name}/latest
+GET /api/document/schemas/{schema-name}
 ```
 Output:
 ```xml
@@ -116,7 +116,7 @@ Output:
 ### Get Schema Definition by Revision
 URL Pattern:
 ```
-GET localhost/{dev-start-url}/api/document/schemas/{schema-name}/revision/{revision-number}
+GET /api/document/schemas/{schema-name}/revision/{revision-number}
 ```
 Output:
 ```xml
@@ -133,7 +133,7 @@ NOTE: <i>newly update schema definition will register as new definition with hig
 
 URL Pattern:
 ```
-POST localhost/{dev-start-url}/api/document/schemas/{schema-name}/latest
+POST /api/document/schemas/{schema-name}
 ```
 Input Data (sample):
 ```xml
@@ -149,7 +149,7 @@ Input Data (sample):
 ### Get Schema Definition's Draft
 URL Pattern:
 ```
-GET localhost/{dev-start-url}/api/document/schemas/{schema-name}/draft
+GET /api/document/schemas/{schema-name}/draft
 ```
 Output:
 ```xml
@@ -166,7 +166,7 @@ NOTE: <i>newly posted schema definition will overwrite previous draft definition
 
 URL Pattern:
  ```
-POST localhost/{dev-start-url}/api/document/schemas/{schema-name}/draft
+POST /api/document/schemas/{schema-name}/draft
 ```
 Input Data (sample):
 ```xml

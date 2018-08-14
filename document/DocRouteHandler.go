@@ -26,12 +26,12 @@ type updateSchemaInfoItem struct {
 }
 
 var schemaRevisionPattern = regexp.MustCompile(`^document/schemas/.+/revisions/[1-9][0-9]*$`)
-var schemaLatestRevPattern = regexp.MustCompile(`^document/schemas/.+/latest$`)
+var schemaLatestRevPattern = regexp.MustCompile(`^document/schemas/.+$`)
 var schemaDraftPattern = regexp.MustCompile(`^document/schemas/.+/draft$`)
 
 //HandleHTTP handle HTTP request
 func HandleHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Request) (bool, error) {
-	if sanatizeURL == "document/schemas" && util.IsGET(r) {
+	if sanatizeURL == "document/schema-infos" && util.IsGET(r) {
 		//get all document schema info
 		results, err := GetAllSchemaInfo(util.GetDB())
 		if err != nil {
@@ -49,7 +49,7 @@ func HandleHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Request) (boo
 		result = "[" + result + "]"
 
 		util.SendHTTPResponse(w, 0, "ok", result)
-	} else if sanatizeURL == "document/schemas" && util.IsPOST(r) {
+	} else if sanatizeURL == "document/schema-infos" && util.IsPOST(r) {
 		//save new schema info
 		body, bodyErr := ioutil.ReadAll(r.Body)
 		if bodyErr != nil {
