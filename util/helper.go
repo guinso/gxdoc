@@ -4,23 +4,16 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/guinso/rdbmstool"
-
-	"github.com/guinso/stringtool"
 
 	//explicitly include GO mysql library
 	//_ "github.com/go-sql-driver/mysql"
 	_ "gopkg.in/go-sql-driver/mysql.v1"
 )
-
-var dbb *sql.DB
 
 var productionDB *sql.DB
 
@@ -39,15 +32,6 @@ func DecodeJSON(request *http.Request, obj interface{}) error {
 	decoder := json.NewDecoder(request.Body)
 
 	return decoder.Decode(&obj)
-}
-
-//GetRandomRunningNumber get next random generated MD5 value to fill
-func GetRandomRunningNumber(tableName string) string {
-
-	return stringtool.MakeMD5(
-		tableName +
-			strconv.FormatInt(time.Now().UnixNano(), 10) +
-			strconv.FormatInt(rand.Int63(), 10))
 }
 
 //SendHTTPResponse send HTTP response

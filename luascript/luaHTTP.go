@@ -36,11 +36,17 @@ func (handler *LuaHTTPHandler) GetCookieValue(L *lua.LState) int {
 	return 1
 }
 
+//SetCookieValue set string value into cookie
 func (handler *LuaHTTPHandler) SetCookieValue(L *lua.LState) int {
 	cookieKey := L.ToString(1) //get 1st parameter as cookie key
+	value := L.ToString(2)     //get 2nd parameter as new cookie value
 
 	cookie, cookieErr := handler.Request.Cookie(cookieKey)
 	if cookieErr != nil {
 		L.RaiseError(cookieErr.Error())
 	}
+
+	cookie.Value = value
+
+	return 0
 }

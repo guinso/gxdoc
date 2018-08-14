@@ -1,4 +1,4 @@
-package tableBuilder
+package SQLBuilder
 
 import (
 	"fmt"
@@ -9,14 +9,21 @@ import (
 	"github.com/guinso/gxschema"
 )
 
-//GenerateSQLBuilder create SQL statements to construct a set of datatables to represent document schema
-func GenerateSQLBuilder(item *gxschema.DxDoc) (string, error) {
-	//TODO: generate table
+const dxID = "id"
+const dxParentID = "parent_id"
+const dxFileName = "filename"
+const dxFilePath = "filepath"
+
+//GenerateSQLTable generate SQL to create a set of datatables based on document schema
+//Returns SQL string
+func GenerateSQLTable(item *gxschema.DxDoc) (string, error) {
+	//generate table
 	subBuilders := []rdbmstool.TableBuilder{}
 
 	builder := rdbmstool.NewTableBuilder()
 	builder.TableName(fmt.Sprintf("data_%s_r%d", item.ID, item.Revision))
-	builder.AddColumnChar("id", 36, false) //primary key
+	builder.AddColumnChar(dxID, 36, false) //primary key
+	builder.AddPrimaryKey(dxID)
 
 	for _, subItem := range item.Items {
 
@@ -114,9 +121,10 @@ func getSubTableName(baseTableName string, path string, name string) string {
 		strings.Replace(name, " ", "-", -1))
 }
 
-func getSanatizeColName(name string) string {
-	return strings.Replace(name, " ", "_", -1)
-}
+//getSanatizeColName sanatize item's name by replacing white space to underscore
+// func getSanatizeColName(name string) string {
+// 	return strings.Replace(name, " ", "_", -1)
+// }
 
 func getIntBuilder(builder *rdbmstool.TableBuilder, item *gxschema.DxInt,
 	path string, baseTableName string) ([]rdbmstool.TableBuilder, error) {
@@ -124,17 +132,17 @@ func getIntBuilder(builder *rdbmstool.TableBuilder, item *gxschema.DxInt,
 		//add sub table
 		intBuilder := rdbmstool.NewTableBuilder()
 		intBuilder.TableName(getSubTableName(baseTableName, path, item.Name))
-		intBuilder.AddColumnInt(getSanatizeColName(item.Name), 11, item.IsOptional)
-		intBuilder.AddColumnChar("id", 36, false)
-		intBuilder.AddColumnChar("parent_id", 36, false)
-		intBuilder.AddPrimaryKey("id")
-		intBuilder.AddForeignKey("parent_id", builder.GetTableName(), "id")
+		intBuilder.AddColumnInt(item.Name, 11, item.IsOptional)
+		intBuilder.AddColumnChar(dxID, 36, false)
+		intBuilder.AddColumnChar(dxParentID, 36, false)
+		intBuilder.AddPrimaryKey(dxID)
+		intBuilder.AddForeignKey(dxParentID, builder.GetTableName(), dxID)
 
 		return []rdbmstool.TableBuilder{*intBuilder}, nil
 	}
 
 	builder.AddColumnInt(
-		getSanatizeColName(item.Name),
+		item.Name,
 		11,
 		item.IsOptional)
 
@@ -146,32 +154,32 @@ func getStrBuilder(builder *rdbmstool.TableBuilder, item *gxschema.DxStr,
 	if item.IsArray {
 		strBuilder := rdbmstool.NewTableBuilder()
 		strBuilder.TableName(getSubTableName(baseTableName, path, item.Name))
-		strBuilder.AddColumnChar("id", 36, false)
-		strBuilder.AddColumnChar("parent_id", 36, false)
+		strBuilder.AddColumnChar(dxID, 36, false)
+		strBuilder.AddColumnChar(dxParentID, 36, false)
 		if item.EnableLenLimit {
 			strBuilder.AddColumnChar(
-				getSanatizeColName(item.Name),
+				item.Name,
 				item.LenLimit,
 				item.IsOptional)
 		} else {
 			strBuilder.AddColumnText(
-				getSanatizeColName(item.Name),
+				item.Name,
 				item.IsOptional)
 		}
-		strBuilder.AddPrimaryKey("id")
-		strBuilder.AddForeignKey("parent_id", builder.GetTableName(), "id")
+		strBuilder.AddPrimaryKey(dxID)
+		strBuilder.AddForeignKey(dxParentID, builder.GetTableName(), dxID)
 
 		return []rdbmstool.TableBuilder{*strBuilder}, nil
 	}
 
 	if item.EnableLenLimit {
 		builder.AddColumnChar(
-			getSanatizeColName(item.Name),
+			item.Name,
 			item.LenLimit,
 			item.IsOptional)
 	} else {
 		builder.AddColumnText(
-			getSanatizeColName(item.Name),
+			item.Name,
 			item.IsOptional)
 	}
 
@@ -183,16 +191,16 @@ func getBoolBuilder(builder *rdbmstool.TableBuilder, item *gxschema.DxBool,
 	if item.IsArray {
 		boolBuilder := rdbmstool.NewTableBuilder()
 		boolBuilder.TableName(getSubTableName(baseTableName, path, item.Name))
-		boolBuilder.AddColumnChar("id", 36, false)
-		boolBuilder.AddColumnChar("parent_id", 36, false)
-		boolBuilder.AddColumnBoolean(getSanatizeColName(item.Name), item.IsOptional)
-		boolBuilder.AddPrimaryKey("id")
-		boolBuilder.AddForeignKey("parent_id", builder.GetTableName(), "id")
+		boolBuilder.AddColumnChar(dxID, 36, false)
+		boolBuilder.AddColumnChar(dxParentID, 36, false)
+		boolBuilder.AddColumnBoolean(item.Name, item.IsOptional)
+		boolBuilder.AddPrimaryKey(dxID)
+		boolBuilder.AddForeignKey(dxParentID, builder.GetTableName(), dxID)
 
 		return []rdbmstool.TableBuilder{*boolBuilder}, nil
 	}
 
-	builder.AddColumnBoolean(getSanatizeColName(item.Name), item.IsOptional)
+	builder.AddColumnBoolean(item.Name, item.IsOptional)
 
 	return nil, nil
 }
@@ -202,21 +210,21 @@ func getDecimalBuilder(builder *rdbmstool.TableBuilder, item *gxschema.DxDecimal
 	if item.IsArray {
 		decimalBuilder := rdbmstool.NewTableBuilder()
 		decimalBuilder.TableName(getSubTableName(baseTableName, path, item.Name))
-		decimalBuilder.AddColumnChar("id", 36, false)
-		decimalBuilder.AddColumnChar("parent_id", 36, false)
+		decimalBuilder.AddColumnChar(dxID, 36, false)
+		decimalBuilder.AddColumnChar(dxParentID, 36, false)
 		decimalBuilder.AddColumnDecimal(
-			getSanatizeColName(item.Name),
+			item.Name,
 			11,
 			item.Precision,
 			item.IsOptional)
-		decimalBuilder.AddPrimaryKey("id")
-		decimalBuilder.AddForeignKey("parent_id", builder.GetTableName(), "id")
+		decimalBuilder.AddPrimaryKey(dxID)
+		decimalBuilder.AddForeignKey(dxParentID, builder.GetTableName(), dxID)
 
 		return []rdbmstool.TableBuilder{*decimalBuilder}, nil
 	}
 
 	builder.AddColumnDecimal(
-		getSanatizeColName(item.Name),
+		item.Name,
 		11,
 		item.Precision,
 		item.IsOptional)
@@ -229,15 +237,15 @@ func getFileBuilder(builder *rdbmstool.TableBuilder, item *gxschema.DxFile,
 
 	fileBuilder := rdbmstool.NewTableBuilder()
 	fileBuilder.TableName(getSubTableName(baseTableName, path, item.Name))
-	fileBuilder.AddColumnChar("id", 36, false)
-	fileBuilder.AddColumnChar("parent_id", 36, false)
-	fileBuilder.AddColumnChar("filename", 200, false)
-	fileBuilder.AddColumnText("filepath", false)
-	fileBuilder.AddPrimaryKey("id")
-	fileBuilder.AddForeignKey("parent_id", builder.GetTableName(), "id")
+	fileBuilder.AddColumnChar(dxID, 36, false)
+	fileBuilder.AddColumnChar(dxParentID, 36, false)
+	fileBuilder.AddColumnChar(dxFileName, 200, false)
+	fileBuilder.AddColumnText(dxFilePath, false)
+	fileBuilder.AddPrimaryKey(dxID)
+	fileBuilder.AddForeignKey(dxParentID, builder.GetTableName(), dxID)
 
 	if !item.IsArray {
-		fileBuilder.AddUniqueKey("parent_id")
+		fileBuilder.AddUniqueKey(dxParentID)
 	}
 
 	return []rdbmstool.TableBuilder{*fileBuilder}, nil
@@ -250,10 +258,10 @@ func getSectionBuilder(builder *rdbmstool.TableBuilder, item *gxschema.DxSection
 
 	fileBuilder := rdbmstool.NewTableBuilder()
 	fileBuilder.TableName(getSubTableName(baseTableName, path, item.Name))
-	fileBuilder.AddColumnChar("id", 36, false)
-	fileBuilder.AddColumnChar("parent_id", 36, false)
-	fileBuilder.AddPrimaryKey("id")
-	fileBuilder.AddForeignKey("parent_id", builder.GetTableName(), "id")
+	fileBuilder.AddColumnChar(dxID, 36, false)
+	fileBuilder.AddColumnChar(dxParentID, 36, false)
+	fileBuilder.AddPrimaryKey(dxID)
+	fileBuilder.AddForeignKey(dxParentID, builder.GetTableName(), dxID)
 
 	//loop all items
 	if strings.Compare(path, "") == 0 {
@@ -324,7 +332,7 @@ func getSectionBuilder(builder *rdbmstool.TableBuilder, item *gxschema.DxSection
 	}
 
 	if !item.IsArray {
-		fileBuilder.AddUniqueKey("parent_id")
+		fileBuilder.AddUniqueKey(dxParentID)
 	}
 
 	return append(subBuilders, *fileBuilder), nil

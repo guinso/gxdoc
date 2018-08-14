@@ -8,6 +8,7 @@ import (
 	"github.com/guinso/gxdoc/bootSequence"
 	"github.com/guinso/gxdoc/configuration"
 	"github.com/guinso/gxdoc/util"
+	//_ "net/http/pprof"
 )
 
 func main() {

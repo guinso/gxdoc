@@ -16,8 +16,10 @@ type HTTPMsg struct {
 }
 
 const (
-	TestDatabaseName = "goweb"
+	TestDatabaseName = "gx_doccon"
 )
+
+var dbb *sql.DB
 
 //GetTestDB get database handler for unit test
 //WARNING: don't use it in source code other than unit test!
