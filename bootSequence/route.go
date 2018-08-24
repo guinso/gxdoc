@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/guinso/gxdoc/document"
 	"github.com/guinso/gxdoc/routing"
 	"github.com/guinso/gxdoc/util"
 	"github.com/guinso/gxschema"
@@ -88,7 +87,7 @@ func HandleRouting(w http.ResponseWriter, r *http.Request) {
 func routeDevelopmentAPI(w http.ResponseWriter, r *http.Request, url string) {
 	//TODO: how to check requstor ID and determine her authority?
 
-	done, docErr := document.HandleHTTP(url, w, r)
+	done, docErr := HandleDocSchemaHTTP(url, w, r)
 	if done {
 		return
 	} else if docErr != nil {

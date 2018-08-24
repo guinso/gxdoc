@@ -1,4 +1,4 @@
-package document
+package bootSequence
 
 import (
 	"encoding/json"
@@ -9,16 +9,18 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/guinso/gxschema"
-
+	"github.com/guinso/gxdoc/document"
 	"github.com/guinso/gxdoc/util"
+	"github.com/guinso/gxschema"
 )
 
+//addNewSchemaInfoItem add schema info data type
 type addNewSchemaInfoItem struct {
 	Name        string `json:"name"`
 	Description string `json:"desc"`
 }
 
+//updateSchemaInfoItem update schema info data type
 type updateSchemaInfoItem struct {
 	Name        string `jon:"name"`
 	Description string `json:"desc"`
@@ -29,11 +31,11 @@ var schemaRevisionPattern = regexp.MustCompile(`^document/schemas/.+/revisions/[
 var schemaLatestRevPattern = regexp.MustCompile(`^document/schemas/.+$`)
 var schemaDraftPattern = regexp.MustCompile(`^document/schemas/.+/draft$`)
 
-//HandleHTTP handle HTTP request
-func HandleHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Request) (bool, error) {
+//HandleDocSchemaHTTP handle HTTP request
+func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Request) (bool, error) {
 	if sanatizeURL == "document/schema-infos" && util.IsGET(r) {
 		//get all document schema info
-		results, err := GetAllSchemaInfo(util.GetDB())
+		results, err := document.GetAllSchemaInfo(util.GetDB())
 		if err != nil {
 			return false, err
 		}
@@ -68,10 +70,10 @@ func HandleHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Request) (boo
 		if trxErr != nil {
 			return false, trxErr
 		}
-		err := AddSchemaInfo(db, input.Name, input.Description)
+		err := document.AddSchemaInfo(db, input.Name, input.Description)
 		if err != nil {
 			trx.Rollback()
-			if _, ok := err.(ErrSchemaInfoAlreadyExists); ok {
+			if _, ok := err.(document.ErrSchemaInfoAlreadyExists); ok {
 				util.SendHTTPResponse(w, -1, err.Error(), "null")
 				return true, nil
 			}
@@ -95,7 +97,7 @@ func HandleHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Request) (boo
 		}
 
 		db := util.GetDB()
-		schema, schemaErr := GetSchemaByRevision(db, name, revision)
+		schema, schemaErr := document.GetSchemaByRevision(db, name, revision)
 		if schemaErr != nil {
 			return false, schemaErr
 		}
@@ -140,7 +142,7 @@ func HandleHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Request) (boo
 		if trxErr != nil {
 			return false, trxErr
 		}
-		_, err := AddSchema(trx, name, dxdoc, "")
+		_, err := document.AddSchema(trx, name, dxdoc, "")
 		if err != nil {
 			trx.Rollback()
 			return false, err
@@ -156,7 +158,7 @@ func HandleHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Request) (boo
 		name := rawArr[2]
 
 		db := util.GetDB()
-		schema, schemaErr := GetSchema(db, name)
+		schema, schemaErr := document.GetSchema(db, name)
 		if schemaErr != nil {
 			return false, schemaErr
 		}
@@ -183,7 +185,7 @@ func HandleHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Request) (boo
 		name := rawArr[2]
 
 		db := util.GetDB()
-		schema, schemaErr := GetSchemaByRevision(db, name, -1)
+		schema, schemaErr := document.GetSchemaByRevision(db, name, -1)
 		if schemaErr != nil {
 			return false, schemaErr
 		}
@@ -225,7 +227,7 @@ func HandleHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Request) (boo
 		if trxErr != nil {
 			return false, trxErr
 		}
-		saveDraftErr := SaveSchemaAsDraft(trx, name, gxdoc, "")
+		saveDraftErr := document.SaveSchemaAsDraft(trx, name, gxdoc, "")
 		if saveDraftErr != nil {
 			trx.Rollback()
 			return false, saveDraftErr
@@ -240,7 +242,7 @@ func HandleHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Request) (boo
 
 		db := util.GetDB()
 
-		schemaInfo, infoErr := GetSchemaInfo(db, name)
+		schemaInfo, infoErr := document.GetSchemaInfo(db, name)
 		if infoErr != nil {
 			return false, infoErr
 		}
@@ -257,7 +259,7 @@ func HandleHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Request) (boo
 		db := util.GetDB()
 
 		name := sanatizeURL[17:]
-		schemaInfo, infoErr := GetSchemaInfo(db, name)
+		schemaInfo, infoErr := document.GetSchemaInfo(db, name)
 		if infoErr != nil {
 			return false, infoErr
 		}
@@ -283,11 +285,11 @@ func HandleHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Request) (boo
 		if trxErr != nil {
 			return false, trxErr
 		}
-		updateErr := UpdateSchemaInfo(trx, schemaInfo)
+		updateErr := document.UpdateSchemaInfo(trx, schemaInfo)
 		if updateErr != nil {
 			trx.Rollback()
 
-			if _, ok := updateErr.(ErrSchemaInfoNotFound); ok {
+			if _, ok := updateErr.(document.ErrSchemaInfoNotFound); ok {
 				util.SendHTTPResponse(w, -1, "schema not exists", "null")
 				return true, nil
 			}
@@ -306,7 +308,7 @@ func HandleHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Request) (boo
 }
 
 //ExportShemaInfoToJSON export SchemaInfo into JSON string
-func ExportShemaInfoToJSON(info *SchemaInfo) string {
+func ExportShemaInfoToJSON(info *document.SchemaInfo) string {
 	return fmt.Sprintf(
 		`{"name": "%s","latestRev": %d,"desc":`+
 			` "%s","isActive": %t,"hasDraft": %t}`,
