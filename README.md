@@ -10,13 +10,13 @@ evaluate golang on building up traceable document system
 ### API Summary
 |HTTP Method|URL|Description|
 | --- | --- | --- |
-| GET | /api/document/schema-infos | get all schema info |
-| POST | /api/document/schema-infos | create new schema info |
-| GET | /api/document/schema-infos/{schema-name} | get specific schema info |
-| POST | /api/document/schema-infos/{schema-name} | update schema info |
-| GET | /api/document/schemas/{schema-name}/revisions/{revision-number} | get specific schema definition by revision number |
+| GET | /api/document/schema-infos | get all schema summary |
+| POST | /api/document/schema-infos | register a new schema |
+| GET | /api/document/schema-infos/{schema-name} | get specific schema summary |
+| POST | /api/document/schema-infos/{schema-name} | update schema summary |
 | GET | /api/document/schemas/{schema-name} | get latest schema definition |
-| POST | /api/document/schemas/{schema-name} | update schema definition to latest revision |
+| POST | /api/document/schemas/{schema-name} | update schema definition |
+| GET | /api/document/schemas/{schema-name}/revisions/{revision-number} | get specific schema definition by revision number |
 | GET | /api/document/schemas/{schema-name}/draft | get draft version of schema definition |
 | POST | /api/document/schemas/{schema-name}/draft | update draft version of schema definition | 
 

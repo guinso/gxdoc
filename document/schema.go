@@ -38,7 +38,7 @@ func GetSchema(db rdbmstool.DbHandlerProxy, name string) (*gxschema.DxDoc, error
 	}
 
 	//convert into DxDoc instance
-	dxdoc, dxErr := gxschema.DecodeDxXML(xmlDef)
+	dxdoc, dxErr := gxschema.ParseSchemaFromXML(xmlDef)
 	if dxErr != nil {
 		return nil, dxErr
 	}
@@ -73,7 +73,7 @@ func GetSchemaByRevision(db rdbmstool.DbHandlerProxy, name string, revision int)
 	}
 
 	//convert into DxDoc instance
-	dxdoc, dxErr := gxschema.DecodeDxXML(xmlDef)
+	dxdoc, dxErr := gxschema.ParseSchemaFromXML(xmlDef)
 	if dxErr != nil {
 		return nil, dxErr
 	}
@@ -111,7 +111,7 @@ func GetSchemaByID(db rdbmstool.DbHandlerProxy, id string) (*gxschema.DxDoc, err
 	}
 
 	//convert into DxDoc instance
-	dxdoc, dxErr := gxschema.DecodeDxXML(xmlDef)
+	dxdoc, dxErr := gxschema.ParseSchemaFromXML(xmlDef)
 	if dxErr != nil {
 		return nil, dxErr
 	}

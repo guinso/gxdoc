@@ -206,3 +206,12 @@ func AddSchemaInfo(db rdbmstool.DbHandlerProxy, name string, description string)
 
 	return nil
 }
+
+//JSON export to JSON string
+func (info *SchemaInfo) JSON() string {
+	return fmt.Sprintf(
+		`{"name": "%s","latestRev": %d,"desc":`+
+			` "%s","isActive": %t,"hasDraft": %t}`,
+		info.Name, info.LatestRevision,
+		info.Description, info.IsActive, info.HasDraft)
+}

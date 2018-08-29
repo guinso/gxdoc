@@ -2,7 +2,6 @@ package bootSequence
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"regexp"
@@ -43,14 +42,16 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 		var result string
 		for index, item := range results {
 			if index == 0 {
-				result = ExportShemaInfoToJSON(&item)
+				result = item.JSON()
 			} else {
-				result = result + "," + ExportShemaInfoToJSON(&item)
+				result = result + "," + item.JSON()
 			}
 		}
 		result = "[" + result + "]"
 
-		util.SendHTTPResponse(w, 0, "ok", result)
+		util.SendHTTPResponseJSON(w, result)
+
+		return true, nil
 	} else if sanatizeURL == "document/schema-infos" && util.IsPOST(r) {
 		//save new schema info
 		body, bodyErr := ioutil.ReadAll(r.Body)
@@ -61,7 +62,7 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 		input := addNewSchemaInfoItem{}
 		jsonErr := json.Unmarshal(body, &input)
 		if jsonErr != nil {
-			util.SendHTTPResponse(w, -1, "invalid input data format", "null")
+			util.SendHTTPClientErrorJSON(w, 400, -1, "invalid input data format")
 			return true, nil
 		}
 
@@ -74,7 +75,7 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 		if err != nil {
 			trx.Rollback()
 			if _, ok := err.(document.ErrSchemaInfoAlreadyExists); ok {
-				util.SendHTTPResponse(w, -1, err.Error(), "null")
+				util.SendHTTPClientErrorJSON(w, 400, -1, err.Error())
 				return true, nil
 			}
 
@@ -82,7 +83,8 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 		}
 		trx.Commit()
 
-		util.SendHTTPResponse(w, 0, "success", "null")
+		util.SendHTTPResponseJSON(w, "{}")
+
 		return true, nil
 	} else if schemaRevisionPattern.MatchString(sanatizeURL) && util.IsGET(r) {
 		//get specific document schema revision (return in XML format)
@@ -90,9 +92,8 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 		name := rawArr[2]
 		revision, revErr := strconv.Atoi(rawArr[4])
 		if revErr != nil {
-			util.SendHTTPResponse(w, -1,
-				"invalid revision value (only accept integer), please check you URL",
-				"null")
+			util.SendHTTPClientErrorJSON(w, 400, -1,
+				"invalid revision value (only accept integer), please check you URL")
 			return true, nil
 		}
 
@@ -103,7 +104,7 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 		}
 
 		if schema == nil {
-			util.SendHTTPResponse(w, 0, "record not found", "null")
+			util.SendHTTPClientErrorJSON(w, 404, -1, "record not found")
 			return true, nil
 		}
 
@@ -113,9 +114,7 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 			return false, xmlErr
 		}
 
-		w.Header().Set("Content-Type", "text/xml; charset=utf8")
-		w.WriteHeader(200)
-		w.Write([]byte(xmlStr))
+		util.SendHTTPResponseXML(w, xmlStr)
 
 		return true, nil
 
@@ -131,9 +130,9 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 		}
 		bodyStr := string(bodyRaw)
 
-		dxdoc, dxErr := gxschema.DecodeDxXML(bodyStr)
+		dxdoc, dxErr := gxschema.ParseSchemaFromXML(bodyStr)
 		if dxErr != nil {
-			util.SendHTTPResponse(w, -1, "invalid XML: "+dxErr.Error(), "null")
+			util.SendHTTPClientErrorJSON(w, 400, -1, "invalid XML: "+dxErr.Error())
 			return true, nil
 		}
 
@@ -149,7 +148,7 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 		}
 		trx.Commit()
 
-		util.SendHTTPResponse(w, 0, "update success", "null")
+		util.SendHTTPResponseJSON(w, "{}")
 		return true, nil
 
 	} else if schemaLatestRevPattern.MatchString(sanatizeURL) && util.IsGET(r) {
@@ -164,7 +163,7 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 		}
 
 		if schema == nil {
-			util.SendHTTPResponse(w, 0, "record not found", "null")
+			util.SendHTTPClientErrorJSON(w, 404, -1, "record not found")
 			return true, nil
 		}
 
@@ -174,9 +173,8 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 			return false, xmlErr
 		}
 
-		w.Header().Set("Content-Type", "text/xml; charset=utf8")
-		w.WriteHeader(200)
-		w.Write([]byte(xmlStr))
+		//TODO: include XSD reference as well
+		util.SendHTTPResponseXML(w, xmlStr)
 
 		return true, nil
 	} else if schemaDraftPattern.MatchString(sanatizeURL) && util.IsGET(r) {
@@ -191,7 +189,7 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 		}
 
 		if schema == nil {
-			util.SendHTTPResponse(w, 0, "not record found", "null")
+			util.SendHTTPClientErrorJSON(w, 404, -1, "not record found")
 			return true, nil
 		}
 
@@ -201,9 +199,7 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 			return false, xmlErr
 		}
 
-		w.Header().Set("Content-Type", "text/xml; charset=utf8")
-		w.WriteHeader(200)
-		w.Write([]byte(xmlStr))
+		util.SendHTTPResponseXML(w, xmlStr)
 
 		return true, nil
 	} else if schemaDraftPattern.MatchString(sanatizeURL) && util.IsPOST(r) {
@@ -216,9 +212,9 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 			return false, rawErr
 		}
 
-		gxdoc, gxErr := gxschema.DecodeDxXML(string(bodyRaw))
+		gxdoc, gxErr := gxschema.ParseSchemaFromXML(string(bodyRaw))
 		if gxErr != nil {
-			util.SendHTTPResponse(w, -1, "invalid input data: "+gxErr.Error(), "null")
+			util.SendHTTPClientErrorJSON(w, 400, -1, "invalid input data: "+gxErr.Error())
 			return true, nil
 		}
 
@@ -234,7 +230,7 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 		}
 		trx.Commit()
 
-		util.SendHTTPResponse(w, 0, "update success", "null")
+		util.SendHTTPResponseJSON(w, "{}")
 		return true, nil
 	} else if strings.HasPrefix(sanatizeURL, "document/schemas/") && util.IsGET(r) {
 		//get single schema info
@@ -248,11 +244,11 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 		}
 
 		if schemaInfo == nil {
-			util.SendHTTPResponse(w, 0, "no record", "null")
+			util.SendHTTPClientErrorJSON(w, 404, -1, "no record")
 			return true, nil
 		}
 
-		util.SendHTTPResponse(w, 0, "", ExportShemaInfoToJSON(schemaInfo))
+		util.SendHTTPResponseJSON(w, schemaInfo.JSON())
 		return true, nil
 	} else if strings.HasPrefix(sanatizeURL, "document/schemas/") && util.IsPOST(r) {
 		//update schema info
@@ -265,7 +261,7 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 		}
 
 		if schemaInfo == nil {
-			util.SendHTTPResponse(w, -1, "schema not found", "null")
+			util.SendHTTPClientErrorJSON(w, 404, -1, "schema not found")
 			return true, nil
 		}
 
@@ -273,8 +269,8 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 		updateItem := updateSchemaInfoItem{}
 		err := util.DecodeJSON(r, &updateItem)
 		if err != nil {
-			util.SendHTTPResponse(w, -1,
-				"unable to process user input, please check your input data format", "null")
+			util.SendHTTPClientErrorJSON(w, 400, -1,
+				"unable to process user input, please check your input data format")
 			return true, nil
 		}
 		schemaInfo.Name = updateItem.Name
@@ -290,7 +286,7 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 			trx.Rollback()
 
 			if _, ok := updateErr.(document.ErrSchemaInfoNotFound); ok {
-				util.SendHTTPResponse(w, -1, "schema not exists", "null")
+				util.SendHTTPClientErrorJSON(w, 404, -1, "schema not exists")
 				return true, nil
 			}
 
@@ -298,20 +294,9 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 		}
 		trx.Commit()
 
-		util.SendHTTPResponse(w, 0, "update success", "null")
+		util.SendHTTPResponseJSON(w, "{}")
 		return true, nil
-	} else {
-		return false, nil
 	}
 
-	return true, nil
-}
-
-//ExportShemaInfoToJSON export SchemaInfo into JSON string
-func ExportShemaInfoToJSON(info *document.SchemaInfo) string {
-	return fmt.Sprintf(
-		`{"name": "%s","latestRev": %d,"desc":`+
-			` "%s","isActive": %t,"hasDraft": %t}`,
-		info.Name, info.LatestRevision,
-		info.Description, info.IsActive, info.HasDraft)
+	return false, nil
 }

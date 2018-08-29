@@ -34,17 +34,35 @@ func DecodeJSON(request *http.Request, obj interface{}) error {
 	return decoder.Decode(&obj)
 }
 
-//SendHTTPResponse send HTTP response
-func SendHTTPResponse(w http.ResponseWriter, statusCode int, statusMsg string, json string) {
-	w.Header().Set("Content-Type", "application/json; charset=utf8")
+//SendHTTPResponseXML send HTTP response in XML format
+func SendHTTPResponseXML(w http.ResponseWriter, xml string) {
+	w.Header().Set("Content-Type", "text/xml; charset=utf8")
 	w.WriteHeader(200)
-	w.Write([]byte(fmt.Sprintf(
-		"{\"statusCode\":%d, \"statusMsg\":\"%s\", \"response\":%s}",
-		statusCode, statusMsg, json)))
+	w.Write([]byte(xml))
 }
 
-//SendHTTPErrorResponse send HTTP 500 internal error response
-func SendHTTPErrorResponse(w http.ResponseWriter) {
+//SendHTTPResponseJSON send HTTP response in JSON format
+func SendHTTPResponseJSON(w http.ResponseWriter, json string) {
+	w.Header().Set("Content-Type", "application/json; charset=utf8")
+	w.WriteHeader(200)
+	w.Write([]byte(json))
+}
+
+//SendHTTPClientErrorJSON send HTTP error response to client
+//due to client request is rejected at server side (in JSON format)
+//
+//	httpCode is HTTP status code, please use value in range 400-499, use 400 if has no idea
+//	errorCode is application's itself's error code, defined by developer, use -1 if has no idea
+//	errorMessage is description to describe errors
+func SendHTTPClientErrorJSON(w http.ResponseWriter, httpCode int, errorCode int, errorMessage string) {
+	w.Header().Set("Content-Type", "application/json; charset=utf8")
+	w.WriteHeader(httpCode)
+	w.Write([]byte(fmt.Sprintf(`{"errorCode":%d, "errorMessage":"%s"}`, errorCode, errorMessage)))
+}
+
+//SendHTTPServerErrorJSON send HTTP error response to client
+//due to server side encounter unexpected error (in JSON format)
+func SendHTTPServerErrorJSON(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json; charset=utf8")
 	w.WriteHeader(500)
 	w.Write([]byte("{msg:\"Encounter internal server error\"}"))

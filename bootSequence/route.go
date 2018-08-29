@@ -145,7 +145,7 @@ func routeProductionAPI(w http.ResponseWriter, r *http.Request, trimURL string) 
 		decodeErr := util.DecodeJSON(r, &rawInput)
 		if decodeErr != nil {
 			log.Println(decodeErr.Error())
-			util.SendHTTPErrorResponse(w)
+			util.SendHTTPServerErrorJSON(w)
 			return
 		}
 
@@ -156,10 +156,10 @@ func routeProductionAPI(w http.ResponseWriter, r *http.Request, trimURL string) 
 			<dxdecimal name="price" precision="2"></dxdecimal>
 		</dxdoc>`
 
-		dxdoc, dxErr := gxschema.DecodeDxXML(defRaw)
+		dxdoc, dxErr := gxschema.ParseSchemaFromXML(defRaw)
 		if dxErr != nil {
 			log.Println(dxErr.Error())
-			util.SendHTTPErrorResponse(w)
+			util.SendHTTPServerErrorJSON(w)
 			return
 		}
 
@@ -179,12 +179,11 @@ func routeProductionAPI(w http.ResponseWriter, r *http.Request, trimURL string) 
 
 		if validateErr != nil {
 			log.Println(validateErr.Error())
-			util.SendHTTPResponse(w, -1, "invalid data format",
-				fmt.Sprintf("{\"detail\": \"%s\"}", validateErr.Error()))
+			util.SendHTTPClientErrorJSON(w, 400, -1, "invalid data format: "+validateErr.Error())
 			return
 		}
 
-		util.SendHTTPResponse(w, 0, "ok", "{}")
+		util.SendHTTPResponseJSON(w, "{}")
 
 	} else if strings.HasPrefix(trimURL, "meals") { //sample return JSON
 		w.Header().Set("Content-Type", "application/json")  //MIME to application/json
