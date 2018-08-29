@@ -45,7 +45,7 @@ func SendHTTPResponseXML(w http.ResponseWriter, xml string) {
 func SendHTTPResponseJSON(w http.ResponseWriter, json string) {
 	w.Header().Set("Content-Type", "application/json; charset=utf8")
 	w.WriteHeader(200)
-	w.Write([]byte(json))
+	w.Write([]byte(fmt.Sprintf(`{"response":%s}`, json)))
 }
 
 //SendHTTPClientErrorJSON send HTTP error response to client

@@ -30,8 +30,6 @@ GET /api/document/schema-infos
 Output:
 ```json
 {
-    "statusCode": 0,
-    "statusMsg": "ok",
     "response": [
         {
             "name": "pr",
@@ -59,8 +57,6 @@ GET /api/document/schema-infos/{schema-name}
 Output:
 ```json
 {
-    "statusCode": 0,
-    "statusMsg": "",
     "response": {
         "name": "pr",
         "latestRev": 1,
