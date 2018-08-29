@@ -31,12 +31,15 @@ var schemaLatestRevPattern = regexp.MustCompile(`^document/schemas/.+$`)
 var schemaDraftPattern = regexp.MustCompile(`^document/schemas/.+/draft$`)
 
 //HandleDocSchemaHTTP handle HTTP request
-func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Request) (bool, error) {
+func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Request) bool {
 	if sanatizeURL == "document/schema-infos" && util.IsGET(r) {
 		//get all document schema info
 		results, err := document.GetAllSchemaInfo(util.GetDB())
 		if err != nil {
-			return false, err
+			//TODO: log error message
+			util.LogError(err)
+			util.SendHTTPServerErrorJSON(w)
+			return true
 		}
 
 		var result string
@@ -51,41 +54,48 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 
 		util.SendHTTPResponseJSON(w, result)
 
-		return true, nil
+		return true
 	} else if sanatizeURL == "document/schema-infos" && util.IsPOST(r) {
 		//save new schema info
-		body, bodyErr := ioutil.ReadAll(r.Body)
+		body, bodyErr := util.GetHTTPRequestBody(r)
 		if bodyErr != nil {
-			return false, bodyErr
+			util.LogError(bodyErr)
+			util.SendHTTPServerErrorJSON(w)
+			return true
 		}
 
 		input := addNewSchemaInfoItem{}
-		jsonErr := json.Unmarshal(body, &input)
+		jsonErr := json.Unmarshal([]byte(body), &input)
 		if jsonErr != nil {
 			util.SendHTTPClientErrorJSON(w, 400, -1, "invalid input data format")
-			return true, nil
+			return true
 		}
 
 		db := util.GetDB()
 		trx, trxErr := db.Begin()
 		if trxErr != nil {
-			return false, trxErr
+			util.LogError(trxErr)
+			util.SendHTTPServerErrorJSON(w)
+			return true
 		}
 		err := document.AddSchemaInfo(db, input.Name, input.Description)
 		if err != nil {
 			trx.Rollback()
 			if _, ok := err.(document.ErrSchemaInfoAlreadyExists); ok {
 				util.SendHTTPClientErrorJSON(w, 400, -1, err.Error())
-				return true, nil
+				return true
 			}
 
-			return false, err
+			util.LogError(err)
+			util.SendHTTPServerErrorJSON(w)
+
+			return true
 		}
 		trx.Commit()
 
 		util.SendHTTPResponseJSON(w, "{}")
 
-		return true, nil
+		return true
 	} else if schemaRevisionPattern.MatchString(sanatizeURL) && util.IsGET(r) {
 		//get specific document schema revision (return in XML format)
 		rawArr := strings.Split(sanatizeURL, "/")
@@ -94,29 +104,35 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 		if revErr != nil {
 			util.SendHTTPClientErrorJSON(w, 400, -1,
 				"invalid revision value (only accept integer), please check you URL")
-			return true, nil
+			return true
 		}
 
 		db := util.GetDB()
 		schema, schemaErr := document.GetSchemaByRevision(db, name, revision)
 		if schemaErr != nil {
-			return false, schemaErr
+			util.LogError(schemaErr)
+			util.SendHTTPServerErrorJSON(w)
+
+			return true
 		}
 
 		if schema == nil {
 			util.SendHTTPClientErrorJSON(w, 404, -1, "record not found")
-			return true, nil
+			return true
 		}
 
 		schema.ID = "" //hide ID from expose to end user
 		xmlStr, xmlErr := schema.XML()
 		if xmlErr != nil {
-			return false, xmlErr
+			util.LogError(xmlErr)
+			util.SendHTTPServerErrorJSON(w)
+
+			return true
 		}
 
 		util.SendHTTPResponseXML(w, xmlStr)
 
-		return true, nil
+		return true
 
 	} else if schemaLatestRevPattern.MatchString(sanatizeURL) && util.IsPOST(r) {
 		//update document schema (input data must be XML)
@@ -124,32 +140,40 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 		name := rawArr[2]
 
 		//get input string and parse into XML
-		bodyRaw, bodyErr := ioutil.ReadAll(r.Body)
+		bodyStr, bodyErr := util.GetHTTPRequestBody(r)
 		if bodyErr != nil {
-			return false, bodyErr
+			util.LogError(bodyErr)
+			util.SendHTTPServerErrorJSON(w)
+
+			return true
 		}
-		bodyStr := string(bodyRaw)
 
 		dxdoc, dxErr := gxschema.ParseSchemaFromXML(bodyStr)
 		if dxErr != nil {
 			util.SendHTTPClientErrorJSON(w, 400, -1, "invalid XML: "+dxErr.Error())
-			return true, nil
+			return true
 		}
 
 		db := util.GetDB()
 		trx, trxErr := db.Begin()
 		if trxErr != nil {
-			return false, trxErr
+			util.LogError(trxErr)
+			util.SendHTTPServerErrorJSON(w)
+
+			return true
 		}
 		_, err := document.AddSchema(trx, name, dxdoc, "")
 		if err != nil {
 			trx.Rollback()
-			return false, err
+
+			util.LogError(err)
+			util.SendHTTPServerErrorJSON(w)
+			return true
 		}
 		trx.Commit()
 
 		util.SendHTTPResponseJSON(w, "{}")
-		return true, nil
+		return true
 
 	} else if schemaLatestRevPattern.MatchString(sanatizeURL) && util.IsGET(r) {
 		//get specific document schema revision (return in XML format)
@@ -159,24 +183,30 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 		db := util.GetDB()
 		schema, schemaErr := document.GetSchema(db, name)
 		if schemaErr != nil {
-			return false, schemaErr
+			util.LogError(schemaErr)
+			util.SendHTTPServerErrorJSON(w)
+
+			return true
 		}
 
 		if schema == nil {
 			util.SendHTTPClientErrorJSON(w, 404, -1, "record not found")
-			return true, nil
+			return true
 		}
 
 		schema.ID = "" //hide ID from expose to end user
 		xmlStr, xmlErr := schema.XML()
 		if xmlErr != nil {
-			return false, xmlErr
+			util.LogError(xmlErr)
+			util.SendHTTPServerErrorJSON(w)
+
+			return true
 		}
 
 		//TODO: include XSD reference as well
 		util.SendHTTPResponseXML(w, xmlStr)
 
-		return true, nil
+		return true
 	} else if schemaDraftPattern.MatchString(sanatizeURL) && util.IsGET(r) {
 		//get draft schema
 		rawArr := strings.Split(sanatizeURL, "/")
@@ -185,23 +215,29 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 		db := util.GetDB()
 		schema, schemaErr := document.GetSchemaByRevision(db, name, -1)
 		if schemaErr != nil {
-			return false, schemaErr
+			util.LogError(schemaErr)
+			util.SendHTTPServerErrorJSON(w)
+
+			return true
 		}
 
 		if schema == nil {
 			util.SendHTTPClientErrorJSON(w, 404, -1, "not record found")
-			return true, nil
+			return true
 		}
 
 		schema.ID = "" //hide ID from end user
 		xmlStr, xmlErr := schema.XML()
 		if xmlErr != nil {
-			return false, xmlErr
+			util.LogError(xmlErr)
+			util.SendHTTPServerErrorJSON(w)
+
+			return true
 		}
 
 		util.SendHTTPResponseXML(w, xmlStr)
 
-		return true, nil
+		return true
 	} else if schemaDraftPattern.MatchString(sanatizeURL) && util.IsPOST(r) {
 		//update draft schema
 		rawArr := strings.Split(sanatizeURL, "/")
@@ -209,29 +245,37 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 
 		bodyRaw, rawErr := ioutil.ReadAll(r.Body)
 		if rawErr != nil {
-			return false, rawErr
+			util.LogError(rawErr)
+			util.SendHTTPServerErrorJSON(w)
+
+			return true
 		}
 
 		gxdoc, gxErr := gxschema.ParseSchemaFromXML(string(bodyRaw))
 		if gxErr != nil {
 			util.SendHTTPClientErrorJSON(w, 400, -1, "invalid input data: "+gxErr.Error())
-			return true, nil
+			return true
 		}
 
 		db := util.GetDB()
 		trx, trxErr := db.Begin()
 		if trxErr != nil {
-			return false, trxErr
+			util.LogError(trxErr)
+			util.SendHTTPServerErrorJSON(w)
+			return true
 		}
 		saveDraftErr := document.SaveSchemaAsDraft(trx, name, gxdoc, "")
 		if saveDraftErr != nil {
 			trx.Rollback()
-			return false, saveDraftErr
+
+			util.LogError(saveDraftErr)
+			util.SendHTTPServerErrorJSON(w)
+			return true
 		}
 		trx.Commit()
 
 		util.SendHTTPResponseJSON(w, "{}")
-		return true, nil
+		return true
 	} else if strings.HasPrefix(sanatizeURL, "document/schemas/") && util.IsGET(r) {
 		//get single schema info
 		name := sanatizeURL[17:]
@@ -240,16 +284,18 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 
 		schemaInfo, infoErr := document.GetSchemaInfo(db, name)
 		if infoErr != nil {
-			return false, infoErr
+			util.LogError(infoErr)
+			util.SendHTTPServerErrorJSON(w)
+			return true
 		}
 
 		if schemaInfo == nil {
 			util.SendHTTPClientErrorJSON(w, 404, -1, "no record")
-			return true, nil
+			return true
 		}
 
 		util.SendHTTPResponseJSON(w, schemaInfo.JSON())
-		return true, nil
+		return true
 	} else if strings.HasPrefix(sanatizeURL, "document/schemas/") && util.IsPOST(r) {
 		//update schema info
 		db := util.GetDB()
@@ -257,12 +303,14 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 		name := sanatizeURL[17:]
 		schemaInfo, infoErr := document.GetSchemaInfo(db, name)
 		if infoErr != nil {
-			return false, infoErr
+			util.LogError(infoErr)
+			util.SendHTTPServerErrorJSON(w)
+			return true
 		}
 
 		if schemaInfo == nil {
 			util.SendHTTPClientErrorJSON(w, 404, -1, "schema not found")
-			return true, nil
+			return true
 		}
 
 		//parse JSON input from HTTP request
@@ -271,7 +319,7 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 		if err != nil {
 			util.SendHTTPClientErrorJSON(w, 400, -1,
 				"unable to process user input, please check your input data format")
-			return true, nil
+			return true
 		}
 		schemaInfo.Name = updateItem.Name
 		schemaInfo.Description = updateItem.Description
@@ -279,7 +327,9 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 
 		trx, trxErr := db.Begin()
 		if trxErr != nil {
-			return false, trxErr
+			util.LogError(trxErr)
+			util.SendHTTPServerErrorJSON(w)
+			return true
 		}
 		updateErr := document.UpdateSchemaInfo(trx, schemaInfo)
 		if updateErr != nil {
@@ -287,16 +337,18 @@ func HandleDocSchemaHTTP(sanatizeURL string, w http.ResponseWriter, r *http.Requ
 
 			if _, ok := updateErr.(document.ErrSchemaInfoNotFound); ok {
 				util.SendHTTPClientErrorJSON(w, 404, -1, "schema not exists")
-				return true, nil
+				return true
 			}
 
-			return false, updateErr
+			util.LogError(updateErr)
+			util.SendHTTPServerErrorJSON(w)
+			return true
 		}
 		trx.Commit()
 
 		util.SendHTTPResponseJSON(w, "{}")
-		return true, nil
+		return true
 	}
 
-	return false, nil
+	return false
 }

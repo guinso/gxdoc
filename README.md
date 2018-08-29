@@ -19,6 +19,7 @@ evaluate golang on building up traceable document system
 | GET | /api/document/schemas/{schema-name}/revisions/{revision-number} | get specific schema definition by revision number |
 | GET | /api/document/schemas/{schema-name}/draft | get draft version of schema definition |
 | POST | /api/document/schemas/{schema-name}/draft | update draft version of schema definition | 
+| POST | /api/document/{schema-name}/validate | validate data with XML or JSON format |
 
 ### Get list of Schema Infomation
 NOTE: <i><b>{dev-start-url}</b> is defined in config.ini file</i>
@@ -172,4 +173,37 @@ Input Data (sample):
     <dxint name="totalQty" isOptional="true"></dxint>
     <dxdecimal name="price" precision="2"></dxdecimal>
 </dxdoc>
+```
+
+### Validate Data with Targeted Schema
+URL Pattern:
+```
+POST /api/document/{schema-name}/validate
+```
+Input Data (XML sample):
+
+<i>please set 'Content-Type' to 'text/xml'</i>
+```xml
+<book>
+    <name>Oliver's Travel</name>
+    <author>John Doe</author>
+</book>
+```
+Input Data (JSON sample):
+
+<i>please set 'Content-Type' to 'application/json'</i>
+```json
+{
+    "name": "Oliver's Travel",
+    "author": "John Doe"
+}
+```
+Output:
+```json
+{
+    "response": {
+        "isValid": true,
+        "message": ""
+    }
+}
 ```

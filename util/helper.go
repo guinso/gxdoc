@@ -4,8 +4,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/guinso/rdbmstool"
@@ -66,6 +69,16 @@ func SendHTTPServerErrorJSON(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json; charset=utf8")
 	w.WriteHeader(500)
 	w.Write([]byte("{msg:\"Encounter internal server error\"}"))
+}
+
+//GetHTTPRequestBody get HTTP request body in raw string format
+func GetHTTPRequestBody(r *http.Request) (string, error) {
+	bodyRaw, bodyErr := ioutil.ReadAll(r.Body)
+	if bodyErr != nil {
+		return "", bodyErr
+	}
+
+	return string(bodyRaw), nil
 }
 
 //IsPOST check request HTTP is POST method
@@ -131,4 +144,20 @@ func GetDBColumnMaxInt(db rdbmstool.DbHandlerProxy, tableName string, columnName
 	}
 
 	return 0, nil
+}
+
+//Log write message into log
+func Log(message string) {
+	log.Println(message)
+}
+
+//LogError write error message and its stack trace into log
+func LogError(err error) {
+	log.Println(err)
+	log.Println("[stack trace]")
+
+	//print stack trace
+	buf := make([]byte, 1<<16)
+	stackSize := runtime.Stack(buf, true)
+	log.Printf("%s\n", string(buf[0:stackSize]))
 }
